@@ -109,7 +109,12 @@ class Common extends CI_Controller {
 	private function setUserInfos(){
 		//echo "entrou";
 		//busca a keyauth de uma maneira que não interrompa o script
+
+		$keyUnique=$this->input("key_unique");
 		$keyAuth=$this->input("key_auth", false);
+
+		$this->keyUnique=$keyUnique;
+
 		//se retornar falso limpa as var do user e retorna falso
 		if(!$keyAuth):
 			//echo "entrour";

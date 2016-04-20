@@ -7,7 +7,8 @@ define("PUB", "pub");
 define("PRIV", "priv");
 define("CLIENT", "client");
 define("PROVIDER", "provider");
-define("DEVMODE", (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false));
+//define("DEVMODE", (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false));
+define("DEVMODE", true);
 
 function def($cont, $visibility, $name, $arr)
 {
@@ -140,8 +141,6 @@ $route['users/set/basic'] = def(
   )
 );
 
-
-
 //precisa: password, new_password
 $route['users/set/password'] = def(
   "users", PRIV, "setPassword",
@@ -171,86 +170,6 @@ $route['users/get/infos/basic'] = def(
   "users", PRIV, "getInfosBasic",
   array()
 );
-
-
-/*profile redirects */
-//busca as informaçÕes do usuario logado atual
-$route['profile/performer/add'] = def(
-  "profile", PUB, "setPerformer",
-  array(
-    "name", "name_performer", "email", "telephone", "obs"
-  )
-);
-
-$route['profile/contact'] = def(
-  "profile", PUB, "setContact",
-  array(
-    "name", "email", "telephone", "obs"
-  )
-);
-
-$route['profile/set/email'] = def(
-  "profile", PUB, "setEmail",
-  array(
-    "id", "name_performer", "name", "email", "telephone", "obs"
-  )
-);
-
-
-//busca as informaçÕes do usuario logado atual
-$route['profile/performer/get'] = def(
-  "profile", PUB, "getPerformers",
-  array(
-    "page", "letter", "city", "state"
-  )
-);
-
-//busca as informaçÕes do usuario logado atual
-$route['profile/performer/get/search'] = def(
-  "profile", PUB, "getPerformersSearch",
-  array(
-    "page", "letter", "city", "state"
-  )
-);
-
-
-//busca as informaçÕes do usuario logado atual
-$route['profile/performer/get/bookmarks'] = def(
-  "profile", PRIV, "getUserBookmarkPerformers",
-  array(
-    "page", "letter", "city", "state"
-  )
-);
-
-
-//busca as informaçÕes do usuario logado atual
-$route['profile/agent/get'] = def(
-  "profile", PUB, "getAgents",
-  array(
-    "page", "letter", "city", "state"
-  )
-);
-
-
-
-//busca as informaçÕes do usuario logado atual
-$route['profile/agent/get/search'] = def(
-  "profile", PUB, "getAgentsSearch",
-  array(
-    "page", "letter", "city", "state"
-  )
-);
-
-//busca as informaçÕes do usuario logado atual
-$route['profile/agent/get/bookmarks'] = def(
-  "profile", PRIV, "getUserBookmarkAgents",
-  array(
-    "page", "letter", "city", "state"
-  )
-);
-
-
-
 
 
 /*search redirects */
@@ -284,16 +203,6 @@ $route['others/get/about'] = 'others/pub/getAbout';
 //requer: nada
 $route['others/get/terms'] = 'others/pub/getTerms';
 
-// //requer: name, telephone, email, message
-// $route['others/set/contact'] = def(
-//   "others", PUB, "setContact",
-//   array(
-//     "name",
-//     "telephone",
-//     "email",
-//     "message"
-//   )
-// );
 
 //requer: name, telephone, email, message
 $route['others/set/newsletter'] = def(
@@ -307,8 +216,138 @@ $route['others/set/newsletter'] = def(
 //requer: nada
 $route['others/get/advertising'] = 'others/pub/getAdvertising';
 
-
 $route['others/banners'] = def(
   "others", PUB, "getBanners",
   array()
+);
+
+
+
+/*
+ PLACE REDIRECTS
+*/
+
+//requer: name, telephone, email, message
+$route['places/get/local'] = def(
+  "places", PUB, "getLocal",
+  array(
+    "id",
+    "lng",
+    "lat"
+  )
+);
+
+$route['places/get/comments'] = def(
+  "places", PRIV, "getComments",
+  array(
+    "id"
+  )
+);
+
+
+$route['places/set/comment/like'] = def(
+  "places", PRIV, "setCommentLike",
+  array(
+    "id"
+  )
+);
+
+
+$route['places/set/bookmark'] = def(
+  "places", PRIV, "setBookmark",
+  array(
+    "id"
+  )
+);
+
+$route['places/set/bookmark/remove'] = def(
+  "places", PRIV, "setBookmarkRemove",
+  array(
+    "id"
+  )
+);
+
+
+$route['places/get/bookmarks'] = def(
+  "places", PRIV, "setBookmarkRemove",
+  array(
+    "id"
+  )
+);
+
+
+
+$route['places/set/bookmark'] = def(
+  "places", PRIV, "setBookmark",
+  array(
+    "id"
+  )
+);
+
+
+$route['places/set/comment/like/remove'] = def(
+  "places", PRIV, "setCommentLikeRemove",
+  array(
+    "id"
+  )
+);
+
+
+$route['places/set/comment/flag'] = def(
+  "places", PRIV, "setCommentFlag",
+  array(
+    "id"
+  )
+);
+
+
+$route['places/set/comment'] = def(
+  "places", PRIV, "setComment",
+  array(
+    "id",
+    "comment"
+  )
+);
+
+
+$route['places/set/photo'] = def(
+  "places", PRIV, "setPhoto",
+  array(
+    "id",
+    "photo_data"
+  )
+);
+
+
+
+//requer: name, telephone, email, message
+$route['places/get/nearby'] = def(
+  "places", PUB, "getNearby",
+  array(
+    "lat",
+    "lng"
+  )
+);
+
+
+//requer: name, telephone, email, message
+$route['places/set/search'] = def(
+  "places", PUB, "setSearch",
+  array(
+    "lat",
+    "lng"
+  )
+);
+
+
+//requer: name, telephone, email, message
+$route['places/set/holdback'] = def(
+  "places", PRIV, "setHoldback",
+  array(
+    "lat",
+    "lng",
+    "type",
+    "address",
+    "obs"
+  )
 );
