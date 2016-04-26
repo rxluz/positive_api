@@ -79,6 +79,10 @@ class Common extends CI_Controller {
 
 	}
 
+
+
+
+
 	/*
 	define na memoria todos os parametros do app
 	*/
@@ -110,7 +114,7 @@ class Common extends CI_Controller {
 		//echo "entrou";
 		//busca a keyauth de uma maneira que não interrompa o script
 
-		$keyUnique=$this->input("key_unique");
+		$keyUnique=$this->input("key_unique", false);
 		$keyAuth=$this->input("key_auth", false);
 
 		$this->keyUnique=$keyUnique;
@@ -714,6 +718,30 @@ class Common extends CI_Controller {
 		return false;
 	}
 
+
+	public function getLatLngFromAddress($address){
+		$address = urlencode($address);
+		$url = "http://maps.google.com/maps/api/geocode/json?address=$address&sensor=false";
+		//echo $url;
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_PROXYPORT, 3128);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+		$response = curl_exec($ch);
+		curl_close($ch);
+		$response_a = json_decode($response);
+
+		//print_r($response);
+		//exit;
+
+		return array("lat" => $response_a->results[0]->geometry->location->lat, "lng" => $response_a->results[0]->geometry->location->lng);
+		// echo $lat = ;
+		// echo "<br />";
+		// echo $long = ;
+	}
+
 	/* verifica se um usuário é provider ou nao */
 	protected function isProvider($id_user=false){
 		if(!$id_user):
@@ -1121,6 +1149,16 @@ class Common extends CI_Controller {
 		return date('Y-m-d H:i:s',strtotime($strtotime));
 	}
 
+	/* retorna uma data no formato mysql, ela usa como parametro de entrada o srttotime */
+	protected function setDateBRFormat($strtotime="now")
+	{
+		if($strtotime=="now"):
+			$strtotime=strtotime("now");
+		endif;
+
+		return date('d/m/Y',strtotime($strtotime))." as ".date('h:i',strtotime($strtotime));
+	}
+
 
 	/*
 	* Função para verificar se o cpf é existe ou não na base de dados, outra função que precisa ser protegida
@@ -1247,6 +1285,54 @@ class Common extends CI_Controller {
 
 		return false;
 	}
+
+	protected function getDistance($lat2, $lon2, $unit="K", $formated=false){
+		$lat1=$this->inputVars["lat"];
+		$lon1=$this->inputVars["lng"];
+
+	  $theta = $lon1 - $lon2;
+	  $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) +  cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
+	  $dist = acos($dist);
+	  $dist = rad2deg($dist);
+	  $miles = $dist * 60 * 1.1515;
+	  $unit = strtoupper($unit);
+
+
+		if($formated===false){
+			return $dist;
+		}
+
+	  if ($unit == "K") {
+			$value=($miles * 1.609344);
+
+			if($value<0.7 && $formated==true):
+				$value=$value*1000;
+				$value=$this->floorp($value, 0);
+				$value=is_nan($value*1)?$value:$value;
+
+				return $value."m";
+			endif;
+
+			$forma=number_format($this->floorp($value, 2), 2, ',', '.');
+
+			//$forma=is_nan($this->floorp($value, 2)*1)?$forma:0;
+
+	    return $formated==true?$forma."km":$value;
+			//return $value;
+	  } else if ($unit == "N") {
+	      return ($miles * 0.8684);
+	    } else {
+	        return $miles;
+	      }
+
+	}
+
+	protected function floorp($val, $precision)
+	{
+	    $half = 0.5 / pow(10, $precision);
+	    return round($val - $half, $precision);
+	}
+
 
 
 	/*

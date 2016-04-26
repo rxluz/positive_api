@@ -1,5 +1,14 @@
 <?php
+
 defined('BASEPATH') OR exit('No direct script access allowed');
+
+define('UC_PUBLIC_KEY', '1dadf66d7c60cd08b42d');
+define('UC_SECRET_KEY', '7b2cad4f9b08080af420');
+define('GOOGLE_API_KEY', 'AIzaSyAazjyszAtACOYxtQ_t3UaGTrMBVHvz51M');
+define('GOOGLE_API_STREET_KEY', 'AIzaSyAazjyszAtACOYxtQ_t3UaGTrMBVHvz51M');
+// define('GOOGLE_API_KEY', 'AIzaSyDy71PV5ohLpAy0rryHmHAMRRgrJKuQ-fk');
+// define('GOOGLE_API_STREET_KEY', 'AIzaSyDy71PV5ohLpAy0rryHmHAMRRgrJKuQ-fk');
+
 
 
 define("PUB", "pub");
@@ -237,58 +246,48 @@ $route['places/get/local'] = def(
   )
 );
 
-$route['places/get/comments'] = def(
-  "places", PRIV, "getComments",
-  array(
-    "id"
-  )
-);
-
-
-$route['places/set/comment/like'] = def(
-  "places", PRIV, "setCommentLike",
-  array(
-    "id"
-  )
-);
-
-
 $route['places/set/bookmark'] = def(
   "places", PRIV, "setBookmark",
   array(
-    "id"
+    "id",
+    "lat",
+    "lng"
   )
 );
 
 $route['places/set/bookmark/remove'] = def(
   "places", PRIV, "setBookmarkRemove",
   array(
-    "id"
+    "id",
+    "lat",
+    "lng"
   )
 );
+
+
 
 
 $route['places/get/bookmarks'] = def(
-  "places", PRIV, "setBookmarkRemove",
+  "places", PRIV, "getBookmarks",
+  array(
+    "lat",
+    "lng"
+  )
+);
+
+$route['places/get/comments'] = def(
+  "places", PUB, "getComments",
   array(
     "id"
   )
 );
 
-
-
-$route['places/set/bookmark'] = def(
-  "places", PRIV, "setBookmark",
+$route['places/set/comment/like'] = def(
+  "places", PRIV, "setCommentLike",
   array(
-    "id"
-  )
-);
-
-
-$route['places/set/comment/like/remove'] = def(
-  "places", PRIV, "setCommentLikeRemove",
-  array(
-    "id"
+    "id",
+    "lat",
+    "lng"
   )
 );
 
@@ -296,7 +295,9 @@ $route['places/set/comment/like/remove'] = def(
 $route['places/set/comment/flag'] = def(
   "places", PRIV, "setCommentFlag",
   array(
-    "id"
+    "id",
+    "lat",
+    "lng"
   )
 );
 
@@ -305,6 +306,8 @@ $route['places/set/comment'] = def(
   "places", PRIV, "setComment",
   array(
     "id",
+    "lat",
+    "lng",
     "comment"
   )
 );
@@ -314,7 +317,21 @@ $route['places/set/photo'] = def(
   "places", PRIV, "setPhoto",
   array(
     "id",
-    "photo_data"
+    "photo",
+    "desc",
+    "lat",
+    "lng"
+  )
+);
+
+
+$route['places/set/photo/flag'] = def(
+  "places", PRIV, "setPhotoFlag",
+  array(
+    "id",
+    "photo_url",
+    "lat",
+    "lng"
   )
 );
 
@@ -325,7 +342,8 @@ $route['places/get/nearby'] = def(
   "places", PUB, "getNearby",
   array(
     "lat",
-    "lng"
+    "lng",
+    "filters"
   )
 );
 
@@ -335,7 +353,8 @@ $route['places/set/search'] = def(
   "places", PUB, "setSearch",
   array(
     "lat",
-    "lng"
+    "lng",
+    "query"
   )
 );
 
@@ -347,7 +366,29 @@ $route['places/set/holdback'] = def(
     "lat",
     "lng",
     "type",
-    "address",
+    "location",
     "obs"
+  )
+);
+
+//requer: name, telephone, email, message
+$route['places/set/holdback/flag'] = def(
+  "places", PRIV, "setHoldbackFlag",
+  array(
+    "lat",
+    "lng",
+    "id"
+  )
+);
+
+
+//requer: name, telephone, email, message
+$route['places/set/review'] = def(
+  "places", PRIV, "setReview",
+  array(
+    "lat",
+    "lng",
+    "id",
+    "review_data"
   )
 );
