@@ -1352,6 +1352,8 @@ where id_places_comments=id_merge)-((select COUNT(*) from places_comments_flags
 
 		$comments=array();
 
+
+
 		if($get->num_rows()>0):
 			foreach($get->result() as $row):
 				$photo_user=$row->facebook_profile_id==='' || $row->facebook_profile_id==='0' ? 'none' : "https://graph.facebook.com/".$row->facebook_profile_id."/picture?width=300";
@@ -1363,7 +1365,7 @@ where id_places_comments=id_merge)-((select COUNT(*) from places_comments_flags
 					"name" => $row->name,
 					"date" => $this->setDateBRFormat($row->date_added),
 					"comment" => $row->comment,
-					"star" => $this->getStar(rand(1, 5)),
+					"star" => $this->getStar($this->getStarUser($row->id_user, $this->inputVars["id"])),
 					"totalLikes" => $this->getCommentsLikeTotal($row->id),
 					"isLike" => $this->isCommentLike($row->id)
 				));
@@ -1372,6 +1374,7 @@ where id_places_comments=id_merge)-((select COUNT(*) from places_comments_flags
 
 		echo json_encode(array("status"=>"success", "total"=>$get->num_rows(), "data"=>$comments));
 	}
+
 
 	//retorna uma array com a lista de comentarios que esse usuario
 	protected function getCommentsFlagsByUser($id_google){
@@ -1449,11 +1452,33 @@ where id_places_comments=id_merge)-((select COUNT(*) from places_comments_flags
 	}
 
 
+	protected function getStarUser($id_user, $id_google){
+		return $this->getReviewAvg($id_google, $id_user);
+	}
+
+	/* busca a avaliacao atual do usuario, se houver */
+	protected function getReview(){
+		$this->db->from("places_reviews");
+		$this->db->where("id_google", $this->inputVars["id"]);
+		$this->db->where("id_user", $this->userId);
+		$get=$this->db->get();
+
+		if($get->num_rows()>0):
+			echo json_encode(array("status"=>"success", "data"=>$get->row()));
+		else:
+			echo json_encode(array("status"=>"none"));
+		endif;
+	}
+
+
 	/*
 		obtem a avaliacao media de um local, ela leva em conta a soma das notas de fisico, visual, mental e auditivo dividido pelo numero de criterios avaliados, caso não encontre nenhuma avaliação retorna 0
 	*/
-	protected function getReviewAvg($id_google){
+	protected function getReviewAvg($id_google, $id_user=false){
 		$this->db->from("places_reviews");
+		if($id_user!==false):
+			$this->db->where("id_user", $id_user);
+		endif;
 		$this->db->where("id_google", $id_google);
 		$get=$this->db->get();
 

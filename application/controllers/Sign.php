@@ -1,6 +1,9 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 include("application/controllers/Common.php");
+
+include("application/libraries/facebook-php-sdk-v4-5.0.0/src/Facebook/autoload.php");
+
 /**
  * traboxapp sign functions
  */
@@ -142,6 +145,18 @@ class Sign extends Common {
 	}
 
 
+	protected function isTrustedFriend($id_friend, $id_user=false){
+		$this->db->from("users_trusted_friends");
+		$this->db->where("friend_facebook_id", $id_friend);
+		$this->db->where("id_user", $id_user==false?$this->userId:$id_user);
+
+		$get=$this->db->get();
+
+		return $get->num_rows()>0?true:false;
+
+	}
+
+
 	//efetua o login via facebook
 	public function setLoginFacebook(){
 		$facebook_id=$this->inputVars["code"];
@@ -154,6 +169,79 @@ class Sign extends Common {
 
 		$facebook_id=str_replace($stringend, "", $this->inputVars["code"]);
 		$public=false;
+
+		//caso o usuario não seja identificado, busca as informacoes de amigos dele e retorna facebook_profile_id
+		$fb = new Facebook\Facebook([
+		  'app_id' => '1732806166961312',
+		  'app_secret' => '6d9fa5408ed4c33f8f6d8b6f82dcf47c',
+		  'default_graph_version' => 'v2.5',
+		]);
+		//
+		$fb->setDefaultAccessToken($this->inputVars["fbToken"]);
+
+		//estender o token:
+		//$longLivedAccessToken = $oAuth2Client->getLongLivedAccessToken('{access-token}');
+
+		try {
+			//busca a lista de amigos que instalaram o Positive
+			$friends_positive = $fb->get('/me/friends?fields=name,id,picture&limit=100')->getDecodedBody();
+
+
+			$friends_all = $fb->get('/me/invitable_friends?fields=name,id,picture&limit=100')->getDecodedBody();
+		  //$userNode = $response->makeGraphEdge();
+
+			//print_r($friends_positive);
+
+			$x=0;
+			$friends_data=array();
+			foreach($friends_positive["data"] as $fp):
+				array_push($friends_data, array(
+					"name" => $fp["name"],
+					"id" => $fp["id"],
+					"picture" => $fp["picture"]["data"]["url"],
+					"userPositive" => true,
+					"selected" => $this->isTrustedFriend($fp["id"])
+				));
+				// $friends_data[$x]["name"]=$fp["name"];
+				// $friends_data[$x]["id"]=$fp["id"];
+				// $friends_data[$x]["picture"]=$fp["picture"]["data"]["url"];
+
+				$x++;
+
+			endforeach;
+
+			foreach($friends_all["data"] as $fa):
+				array_push($friends_data, array(
+					"name" => $fa["name"],
+					"id" => $fa["id"],
+					"picture" => $fa["picture"]["data"]["url"],
+					"userPositive" => false,
+					"selected" => false
+				));
+
+				// $friends_data[$x]["name"]=$fa["name"];
+				// $friends_data[$x]["id"]=$fa["id"];
+				// $friends_data[$x]["picture"]=$fa["picture"]["data"]["url"];
+
+				$x++;
+
+			endforeach;
+
+			//echo "---------------------";
+			//print_r($friends_all);
+
+			//echo json_encode($friends_data);
+		} catch(Facebook\Exceptions\FacebookResponseException $e) {
+		  // When Graph returns an error
+		  echo 'Graph returned an error: ' . $e->getMessage();
+		  exit;
+		} catch(Facebook\Exceptions\FacebookSDKException $e) {
+		  // When validation fails or other local issues
+		  echo 'Facebook SDK returned an error: ' . $e->getMessage();
+		  exit;
+		}
+
+
 
 		$this->db->from("users");
 		$this->db->where("facebook_profile_id", $facebook_id);
@@ -172,15 +260,22 @@ class Sign extends Common {
 				"key_auth"=>$this->generateUserKey(0),
 				"key_user_type"=>$user->type,
 				"user_name"=>$user->name,
+				"user_allow_hospital"=>$user->allow_hospital,
+				"user_birth_date"=>$user->birth_date,
 				"user_email"=>$user->email,
 				"user_telephone"=>$user->telephone,
-				"user_facebook_id"=>$user->facebook_profile_id
+				"user_donor"=>$user->donor,
+				"user_blood_type"=>$user->blood_type,
+				"user_code"=>$user->code,
+				"user_city"=>$user->city,
+				"user_facebook_id"=>$user->facebook_profile_id,
+				"data"=>$friends_data
 			));
-			//essa função se retornar true retorna com um exit porque ela tem que interromper o script
+
 			return false;
 		endif;
 
-		echo json_encode(array("status"=>"fail"));
+		echo json_encode(array("status"=>"fail", "data"=>$friends_data));
 		return false;
 
 	}
@@ -190,8 +285,31 @@ class Sign extends Common {
 		echo json_encode(array("status"=>"success"));
 	}
 
-	/* grava o usuario no banco de dados e faz as validações em comum com o cliente e o prestador, gera a auth_key para o usuário novo, o usuário nesse momento que é gravado é gravado como não confirmado para o prestador */
+	/* grava o usuario no banco de dados e gera um token permanente para o usuario no Facebook */
 	protected function setUser(){
+
+		$fb = new Facebook\Facebook([
+		  'app_id' => '1732806166961312',
+		  'app_secret' => '6d9fa5408ed4c33f8f6d8b6f82dcf47c',
+		  'default_graph_version' => 'v2.5',
+		]);
+		//
+		$fb->setDefaultAccessToken($this->inputVars["fbToken"]);
+
+		$oAuth2Client = $fb->getOAuth2Client();
+
+		$info=$fb->get('/me')->getDecodedBody();
+
+		//print_r($info);
+
+		//estender o token:
+		$longLivedAccessToken = $oAuth2Client->getLongLivedAccessToken($this->inputVars["fbToken"]);
+
+
+		//echo $longLivedAccessToken;
+		//return false;
+
+
 		//alem de gravar o usuário no banco retorna uma chave de sessão válida que será utilizada pelo usuário para os próximos cadastros
 		//envia um email para o usuário pedindo a confirmação do cadastro, o usuário recebe no email uma chave de confirmação igual a chave de restauração, a data de validade dela é mais longa que uma chave de restauração
 
@@ -200,7 +318,9 @@ class Sign extends Common {
 		//se o code não existe (função na common também)
 		//se não existir
 
-		$type=$this->inputVars["type"];
+		//$type=$this->inputVars["type"];
+
+		$type=0;
 
 		if(!$this->verifyEmail(false, true)):
 			echo json_encode(array("status"=>"email_invalid"));
@@ -210,12 +330,17 @@ class Sign extends Common {
 		$data=array(
 			"name" => $this->inputVars["name"],
 			"email" => $this->inputVars["email"],
+			"blood_type" => $this->inputVars["blood_type"],
+			"donor" => $this->inputVars["donor"],
+			"city" => $this->inputVars["city"],
+			"fbToken" => $longLivedAccessToken,
+			"fbToken_date" => $this->setMysqlTimestamp("now"),
 			//"telephone" => $this->inputVars["telephone"],
 			//o password já está criptografado na inputvars
-			"password" => $this->inputVars["password"],
+			//"password" => $this->inputVars["password"],
+			"type" => $type,
 			"facebook_profile_id" => $this->inputVars["facebook_profile_id"],
 			"status" => 3,
-			"type" => $type,
 			"ip_added" => USER_IP,
 			"last_login" => $this->setMysqlTimestamp("now"),
 			"last_ip" => USER_IP
@@ -250,9 +375,12 @@ class Sign extends Common {
 			"status"=>"success",
 			"key_auth"=>$this->generateUserKey(),
 			"key_user_type"=>$type,
-			"user_name"=>$this->userName,
-			//"user_telephone"=>$this->inputVars["telephone"],
+			"user_name"=>$this->inputVars["name"],
+			"user_blood_type" => $this->inputVars["blood_type"],
+			"user_donor" => $this->inputVars["donor"],
+			"user_city" => $this->inputVars["city"],
 			"user_email"=>$this->userEmail
+
 			)
 		);
 		return true;

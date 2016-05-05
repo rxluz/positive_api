@@ -47,6 +47,7 @@ class Others extends Common {
 	*/
 	protected function setContact(){
 		$data=array(
+			//"name", "name_performer", "email", "telephone", "obs"
 			"name"=>$this->inputVars["name"],
 			"email"=>$this->inputVars["email"],
 			"telephone"=>$this->inputVars["telephone"],
@@ -56,21 +57,21 @@ class Others extends Common {
 
 		$this->db->insert("others_contact_form", $data);
 
-		//print_r($this->configEmail);
-
-		$this->load->library('email', $this->configEmail);
-		$this->email->set_newline("\r\n");
-
-		// Set to, from, message, etc.
-		$this->email->from('rx@appock.co', 'Ricardo Santos');
-		$this->email->to('ricardo.out@gmail.com');
-		$this->email->cc('rcsantosricardo@aol.com');
-		//$this->email->bcc('them@their-example.com');
-
-		$this->email->subject('Email Test');
-		$this->email->message('Testing the email class.');
-
-		$result = $this->email->send();
+		// //print_r($this->configEmail);
+		//
+		// $this->load->library('email', $this->configEmail);
+		// $this->email->set_newline("\r\n");
+		//
+		// // Set to, from, message, etc.
+		// $this->email->from('rx@appock.co', 'Ricardo Santos');
+		// $this->email->to('ricardo.out@gmail.com');
+		// $this->email->cc('rcsantosricardo@aol.com');
+		// //$this->email->bcc('them@their-example.com');
+		//
+		// $this->email->subject('Email Test');
+		// $this->email->message('Testing the email class.');
+		//
+		// $result = $this->email->send();
 
 		echo json_encode(array("status"=>"success"));
 	}

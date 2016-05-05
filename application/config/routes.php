@@ -94,7 +94,8 @@ $route['sign/login'] = def(
 $route['sign/login/facebook'] = def(
   "sign", PUB, "setLoginFacebook",
   array(
-    "code"
+    "code",
+    "fbToken"
   )
 );
 
@@ -109,7 +110,7 @@ $route['sign/logout'] = def(
 $route['sign/set/user'] = def(
   "sign", PUB, "setUser",
   array(
-    "type", "name", "email", "password", "facebook_profile_id"
+    "blood_type", "city", "name", "email", "donor", "facebook_profile_id", "fbToken"
   )
 );
 
@@ -123,6 +124,27 @@ client/ = only clients logged
 provider/ = only providers logged
 */
 
+$route['users/set/friends'] = def(
+  "users", PRIV, "setFriends",
+  array(
+    "friends_data"
+  )
+);
+
+
+$route['users/get/friends/responsible'] = def(
+  "users", PRIV, "getFriendsResponsible",
+  array()
+);
+
+
+$route['users/set/hospital'] = def(
+  "users", PRIV, "setHospital",
+  array(
+    "code", "birth_date", "allow_hospital"
+  )
+);
+
 //precisa: auth_key_email
 $route['users/set/confirm'] = def(
   "users", PUB, "setConfirm",
@@ -131,11 +153,20 @@ $route['users/set/confirm'] = def(
   )
 );
 
+//precisa: auth_key_email
+$route['users/set/restore'] = def(
+  "users", PUB, "setRestore",
+  array(
+    "code"
+  )
+);
+
 //precisa: password
 $route['users/set/cancel'] = def(
   "users", PRIV, "setCancel",
   array(
-    "password"
+    "password",
+    "cause"
   )
 );
 
@@ -146,7 +177,7 @@ $route['users/set/cancel'] = def(
 $route['users/set/basic'] = def(
   "users", PRIV, "setBasic",
   array(
-    "email", "telephone", "name"
+    "blood_type", "city", "name", "email", "donor"
   )
 );
 
@@ -229,6 +260,15 @@ $route['others/banners'] = def(
   "others", PUB, "getBanners",
   array()
 );
+
+
+$route['others/set/contact'] = def(
+  "others", PUB, "setContact",
+  array(
+    "name", "email", "telephone", "message"
+  )
+);
+
 
 
 
@@ -390,5 +430,13 @@ $route['places/set/review'] = def(
     "lng",
     "id",
     "review_data"
+  )
+);
+
+//requer: name, telephone, email, message
+$route['places/get/review'] = def(
+  "places", PRIV, "getReview",
+  array(
+    "id"
   )
 );

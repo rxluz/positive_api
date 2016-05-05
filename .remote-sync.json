@@ -1,0 +1,13 @@
+{
+  "uploadOnSave": true,
+  "useAtomicWrites": false,
+  "deleteLocal": false,
+  "hostname": "45.55.60.247",
+  "target": "/var/www/html/api.appock.co/positive/",
+  "ignore": [
+    ".git/**"
+  ],
+  "username": "root",
+  "password": "51f*07Xr67X2Bmp",
+  "transport": "scp"
+}

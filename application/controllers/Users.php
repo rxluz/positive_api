@@ -6,6 +6,95 @@ include("application/controllers/Common.php");
  */
 class Users extends Common {
 
+
+	protected function setHospital(){
+		//atualiza os campos allow_hospital, code, e birth_date
+		$data=array(
+			"allow_hospital"=>$this->inputVars["allow_hospital"],
+			"code"=>$this->inputVars["code"],
+			"birth_date"=>$this->brToMysqlFormat($this->inputVars["birth_date"])
+		);
+
+		$this->db->where("id", $this->userId);
+		$this->db->update("users", $data);
+
+		//$date=explode("T", $this->brToMysqlFormat($this->inputVars["birth_date"]));
+
+		echo json_encode(array(
+			"status"=>"success",
+			"user_allow_hospital"=>$this->inputVars["allow_hospital"],
+			"user_code"=>$this->inputVars["code"],
+			"user_birth_date"=>$this->inputVars["birth_date"]
+		));
+	}
+	/*
+	Processo:
+	- Busca o usuario que possua o email informado
+	- Restaura a senha dele para uma senha simples (exemplo: RT456)
+	- Envia um email para o usuario informando da restauração da senha
+
+	*/
+	public function setRestore(){
+		$this->db->from("users");
+		$this->db->where("email", $this->inputVars["code"]);
+		$this->db->where_in("status", array("0", "1", "2", "3"));
+
+		$get=$this->db->get();
+
+		if($get->num_rows()>0):
+			$row=$get->row();
+
+			//restaura a senha
+			$new_password=$this->generateRandomString(5);
+
+			$this->db->where("id", $row->id);
+			$this->db->update("users", array(
+				"password"=>password_hash($new_password, PASSWORD_DEFAULT))
+			);
+
+			$this->sendEmail(
+				'Restaurar sua senha no Urban Maps',
+				$this->load->view(
+					"sign_email_restore",
+					array("pass"=>$new_password),
+					true
+				),
+				$row->email
+			);
+
+
+			echo json_encode(array("status"=>"success"));
+
+
+		else:
+			echo json_encode(array("status"=>"fail"));
+		endif;
+	}
+
+
+	protected function setFriends(){
+		$friends_data=json_decode(base64_decode($this->inputVars["friends_data"]));
+
+		//apaga todos os amigos relacionados desse usuario
+		$this->db->where("id_user", $this->userId);
+		$this->db->delete("users_trusted_friends");
+
+		foreach($friends_data as $friend):
+			$data_friend=array(
+				"id_user" => $this->userId,
+				"friend_name" => $friend->name,
+				"friend_facebook_id" => $friend->id,
+				"friend_picture" => $friend->picture
+			);
+
+			$this->db->insert("users_trusted_friends", $data_friend);
+
+			//print_r($friend);
+			//echo "---";
+		endforeach;
+		echo json_encode(array("status"=>"success"));
+	}
+
 	/*
 	Essa função vai confirmar o cadastro do usuário, ela usa uma key gerara para isso que precisa de ser valida e estar dentro da periodo aceito
 	Caso o usuário altere o email antes de confirmar a chave de confirmação anterior deve ser cancelada/expirada
@@ -58,7 +147,7 @@ class Users extends Common {
 
 				$this->expireKey("all");
 				$this->db->where("id", $this->userId);
-				$this->db->update("users", array("status"=>"4"));
+				$this->db->update("users", array("status"=>"4", "cancel_cause"=>$this->inputVars["cause"]));
 
 				echo json_encode(array("status"=>"success"));
 				return true;
@@ -73,51 +162,43 @@ class Users extends Common {
 	}
 
 	/*
-	Edita as informações basicas comuns ao cadastro do cliente quando do fornecedor
+		Edita as informações basicas
 	*/
 	protected function setBasic(){
-		//caso o usuário altere o email dele, ele tem que confirmar novamente o cadastro
-		//quando o usuário altera o email, o status dele é retornado para 2, e é enviado um novo email de confirmação
-		//é necessário alterar o email na sessão também
-		//campos inalteraveis: codigo, url, nome, sobrenome
-		if(!$this->verifyEmail(false)):
+
+		if(!$this->verifyEmail(false, false)):
 			echo json_encode(array("status"=>"email_invalid"));
 			return false;
 		endif;
 
-
-		$status=$this->userStatus;
-
-		if($this->inputVars["email"]!=$this->userEmail):
-			//nesse caso o email foi alterado e é necessário alterar o status
-			//se houve alterações no email muda o status pra 2 se for cliente, se for provider muda o status pra 0 se o perfil estiver incompleto e pra 2 se o perfil estiver completo
-			//$status=($this->isProvider()?($this->isProviderComplete()?2:0):2);
-		endif;
-
 		$data=array(
-			"email" => $this->inputVars["email"],
-			"telephone" => $this->inputVars["telephone"],
 			"name" => $this->inputVars["name"],
-			"last_ip" => USER_IP
+			"email" => $this->inputVars["email"],
+			"blood_type" => $this->inputVars["blood_type"],
+			"donor" => $this->inputVars["donor"],
+			"city" => $this->inputVars["city"]
 		);
 
 		$this->db->where("id", $this->userId);
 		$this->db->update("users", $data);
 
 		echo json_encode(
-			array(
-				"status"=>"success",
-				"user_email" => $this->inputVars["email"],
-				"user_telephone" => $this->inputVars["telephone"],
-				"user_name" => $this->inputVars["name"]
+		array(
+			"status"=>"success",
+			"user_name"=>$this->inputVars["name"],
+			"user_blood_type" => $this->inputVars["blood_type"],
+			"user_donor" => $this->inputVars["donor"],
+			"user_city" => $this->inputVars["city"],
+			"user_email"=>$this->userEmail
 			)
 		);
+		return true;
+	}
 
-		if($this->inputVars["email"]!=$this->userEmail):
-			//se houve alteração de email é necessário uma nova confirmação
-			$this->userEmail=$this->inputVars["email"];
-			//$this->setEmailConfirm();
-		endif;
+
+
+	protected function getFriendsResponsible(){
+		echo json_encode(array("status"=>"success"));
 	}
 
 

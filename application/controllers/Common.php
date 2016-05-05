@@ -418,6 +418,17 @@ class Common extends CI_Controller {
 
 	}
 
+
+	protected function generateRandomString($length = 10) {
+    $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[rand(0, $charactersLength - 1)];
+    }
+    return $randomString;
+	}
+
 	/*
 	* define o ip mais provavel do usuário
 	*/
@@ -694,7 +705,7 @@ class Common extends CI_Controller {
 				$this->userName=$user->name;
 				$this->userCode=$user->code;
 				$this->userStatus=$user->status;
-				$this->userURL=$user->url;
+				//$this->userURL=$user->url;
 				if($returnuser):
 					return $row->id_user;
 				endif;
@@ -1138,6 +1149,9 @@ class Common extends CI_Controller {
 	}
 
 
+	protected function brToMysqlFormat($datebr){
+		return implode("-",array_reverse(explode("/",$datebr)));
+	}
 
 	/* retorna uma data no formato mysql, ela usa como parametro de entrada o srttotime */
 	protected function setMysqlTimestamp($strtotime="now")
